@@ -40,29 +40,43 @@ def test_urgency_high():
 
 
 def test_priority_matrix_high_high():
-    result = suggest_priority(
+    (
+        priority,
+        confidence,
+        explanation,
+        impact,
+        impact_confidence,
+        impact_explanation,
+        urgency,
+        urgency_confidence,
+        urgency_explanation,
+    ) = suggest_priority(
         "Emergency building problem",
         "Fire in the building, everyone is in danger"
     )
 
-    priority = result[0]
-    impact = result[3]
-    urgency = result[6]
-
     assert impact == "High"
     assert urgency == "High"
     assert priority == "Critical"
+    assert confidence > 0
+    assert explanation
 
 
 def test_priority_matrix_medium_high():
-    result = suggest_priority(
+    (
+        priority,
+        confidence,
+        explanation,
+        impact,
+        impact_confidence,
+        impact_explanation,
+        urgency,
+        urgency_confidence,
+        urgency_explanation,
+    ) = suggest_priority(
         "Laboratory stopped working",
         "The laboratory class cannot continue"
     )
-
-    priority = result[0]
-    impact = result[3]
-    urgency = result[6]
 
     assert impact == "Medium"
     assert urgency == "High"
@@ -70,14 +84,20 @@ def test_priority_matrix_medium_high():
 
 
 def test_priority_matrix_low_low():
-    result = suggest_priority(
+    (
+        priority,
+        confidence,
+        explanation,
+        impact,
+        impact_confidence,
+        impact_explanation,
+        urgency,
+        urgency_confidence,
+        urgency_explanation,
+    ) = suggest_priority(
         "Minor personal issue",
         "This is a minor issue and can wait"
     )
-
-    priority = result[0]
-    impact = result[3]
-    urgency = result[6]
 
     assert impact == "Low"
     assert urgency == "Low"

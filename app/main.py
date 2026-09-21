@@ -1,7 +1,7 @@
 from fastapi import FastAPI
-from pydantic import BaseModel
 
-from app.rules.router import suggest_category, suggest_priority
+from app.schemas import TicketRequest, PredictionResponse
+from app.decision_engine import DecisionEngine
 
 
 app = FastAPI(
@@ -10,9 +10,7 @@ app = FastAPI(
 )
 
 
-class TicketRequest(BaseModel):
-    title: str
-    description: str
+decision_engine = DecisionEngine()
 
 
 @app.get("/health")
@@ -23,24 +21,15 @@ def health_check():
     }
 
 
-@app.post("/api/v1/predict")
+@app.post(
+    "/api/v1/predict",
+    response_model=PredictionResponse
+)
 def predict_ticket(ticket: TicketRequest):
-    category, category_confidence, category_explanation = suggest_category(
+
+    result = decision_engine.predict(
         ticket.title,
         ticket.description
     )
 
-    priority, priority_confidence, priority_explanation = suggest_priority(
-        ticket.title,
-        ticket.description
-    )
-
-    return {
-        "category": category,
-        "category_confidence": category_confidence,
-        "category_explanation": category_explanation,
-        "priority": priority,
-        "priority_confidence": priority_confidence,
-        "priority_explanation": priority_explanation,
-        "method": "rule-based"
-    }
+    return result
