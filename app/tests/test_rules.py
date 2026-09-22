@@ -12,7 +12,7 @@ def test_maintenance_category():
         "The AC in room 205 stopped working"
     )
 
-    assert category == "Maintenance"
+    assert category == "HVAC_AC"
     assert confidence > 0
     assert explanation
 

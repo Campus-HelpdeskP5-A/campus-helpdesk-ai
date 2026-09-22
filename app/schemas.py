@@ -1,33 +1,36 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List, Dict, Any
 
 
-class TicketRequest(BaseModel):
+# ---------- Request shapes ----------
+
+class TicketTextRequest(BaseModel):
     title: str
     description: str
 
 
+class SLARiskRequest(BaseModel):
+    workload: str          # "Low" | "Medium" | "High"
+    priority: str          # "Low" | "Medium" | "High" | "Critical"
+    ticket_age_hours: float
+
+
+class ExistingTicket(BaseModel):
+    id: str
+    text: str
+
+
+class DuplicateRequest(BaseModel):
+    title: str
+    description: str
+    existing_tickets: List[ExistingTicket]
+
+
+# ---------- Unified response shape (matches predictions table) ----------
+
 class PredictionResponse(BaseModel):
-    category: str
-    category_confidence: float
-    category_explanation: str
-
-    impact: str
-    impact_confidence: float
-    impact_explanation: str
-
-    urgency: str
-    urgency_confidence: float
-    urgency_explanation: str
-
-    priority: str
-    priority_confidence: float
-    priority_explanation: str
-
-    category_method: str
-    priority_method: str
-
-    is_emergency: bool
-    emergency_keyword: Optional[str] = None
-
+    prediction_type: str          # "CATEGORY" | "PRIORITY" | "SLA_RISK" | "DUPLICATE"
+    value: Dict[str, Any]
+    confidence: float
     model_version: str
+    explanation: str

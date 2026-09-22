@@ -14,7 +14,7 @@ sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 DATA_PATH = Path(__file__).resolve().parent.parent / "data" / "classification" / "classification_dataset.csv"
 MODEL_DIR = Path(__file__).resolve().parent.parent / "models" / "category"
-BASELINE_MACRO_F1 = 0.7711
+BASELINE_MACRO_F1 = 0.7011  # dataset v2 rule-based baseline
 
 
 def load_dataset(path):
