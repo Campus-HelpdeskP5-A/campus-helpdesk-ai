@@ -1,3 +1,5 @@
+import re
+
 from app.rules import (
     CATEGORY_RULES,
     IMPACT_RULES,
@@ -6,15 +8,43 @@ from app.rules import (
 )
 
 
+EMERGENCY_KEYWORDS = [
+    "fire",
+    "flood",
+    "gas leak",
+    "electric shock",
+    "explosion",
+    "collapse",
+]
+
+
 def _find_matching_rule(text: str, rules: dict):
     text = text.lower()
 
     for label, keywords in rules.items():
         for keyword in keywords:
-            if keyword in text:
+            # \b = word boundary, biyman3 en "ac" tetla3 sa7 gowa "back"
+            pattern = r"\b" + re.escape(keyword) + r"\b"
+            if re.search(pattern, text):
                 return label, keyword
 
     return None, None
+
+
+def is_emergency(title: str, description: str):
+    """
+    System-level rule trigger, mesh training label.
+    Lazem yet7arek 2abl ay ML/priority logic, w yeb2a separate
+    3an el urgency el 3adeya.
+    """
+    text = f"{title} {description}".lower()
+
+    for keyword in EMERGENCY_KEYWORDS:
+        pattern = r"\b" + re.escape(keyword) + r"\b"
+        if re.search(pattern, text):
+            return True, keyword
+
+    return False, None
 
 
 def suggest_category(title: str, description: str):
@@ -33,7 +63,7 @@ def suggest_category(title: str, description: str):
         )
 
     return (
-        "Other",
+        "OTHER",
         0.5,
         "No specific category keyword was detected."
     )
@@ -64,7 +94,6 @@ def suggest_impact(title: str, description: str):
 def suggest_urgency(title: str, description: str):
     text = f"{title} {description}".lower()
 
-    # Explicit low urgency phrases take priority
     low_urgency_phrases = [
         "not urgent",
         "can wait",
@@ -118,10 +147,8 @@ def suggest_priority(title: str, description: str):
         description
     )
 
-    # Calculate priority using Impact × Urgency matrix
     priority = PRIORITY_MATRIX[impact][urgency]
 
-    # Priority confidence is based on the less confident input
     priority_confidence = round(
         min(
             impact_confidence,

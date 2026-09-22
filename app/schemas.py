@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from typing import Optional
 
 
 class TicketRequest(BaseModel):
@@ -25,3 +26,8 @@ class PredictionResponse(BaseModel):
 
     category_method: str
     priority_method: str
+
+    is_emergency: bool
+    emergency_keyword: Optional[str] = None
+
+    model_version: str
