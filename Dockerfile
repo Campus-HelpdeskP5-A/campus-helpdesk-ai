@@ -14,4 +14,4 @@ COPY . .
 RUN python -c "import os,hashlib; p='models/category/category_model.joblib'; print('=== MODEL FILE ==='); print('SIZE:',os.path.getsize(p)); print('SHA256:',hashlib.sha256(open(p,'rb').read()).hexdigest())"
 EXPOSE 8000
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
