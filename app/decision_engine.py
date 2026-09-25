@@ -25,7 +25,7 @@ class DecisionEngine:
     def predict_category(self, title: str, description: str):
         text = f"{title} {description}"
 
-        # Emergency check dayman awel 7aga, mesh gowa el ML flow
+        # Emergency check first, outside the ML flow
         emergency, emergency_keyword = is_emergency(title, description)
 
         category_result = None
@@ -55,6 +55,10 @@ class DecisionEngine:
         }
 
     def predict_priority(self, title: str, description: str):
+        # Emergency check: informational flag only.
+        # It does not override the priority value.
+        emergency, emergency_keyword = is_emergency(title, description)
+
         (
             priority,
             priority_confidence,
@@ -73,13 +77,20 @@ class DecisionEngine:
                 "priority": priority,
                 "impact": impact,
                 "urgency": urgency,
+                "is_emergency": emergency,
+                "emergency_keyword": emergency_keyword,
             },
             "confidence": priority_confidence,
             "model_version": "priority-rules-v1",
             "explanation": priority_explanation,
         }
 
-    def predict_sla_risk(self, workload: str, priority: str, ticket_age_hours: float):
+    def predict_sla_risk(
+        self,
+        workload: str,
+        priority: str,
+        ticket_age_hours: float
+    ):
         result = self.sla_model.predict({
             "workload": workload,
             "priority": priority,
@@ -96,7 +107,15 @@ class DecisionEngine:
             "explanation": result["explanation"],
         }
 
-    def predict_duplicate(self, title: str, description: str, existing_tickets: list):
+    def predict_duplicate(
+        self,
+        title: str,
+        description: str,
+        existing_tickets: list
+    ):
+        # Emergency check for duplicate tickets
+        emergency, emergency_keyword = is_emergency(title, description)
+
         try:
             detector = DuplicateDetector()
             detector.fit(existing_tickets)
@@ -104,18 +123,25 @@ class DecisionEngine:
         except Exception:
             candidates = []
 
-        top_confidence = candidates[0]["similarity_score"] if candidates else 0.0
+        top_confidence = (
+            candidates[0]["similarity_score"]
+            if candidates
+            else 0.0
+        )
 
         return {
             "prediction_type": "DUPLICATE",
             "value": {
                 "candidates": candidates,
+                "is_emergency": emergency,
+                "emergency_keyword": emergency_keyword,
             },
             "confidence": top_confidence,
             "model_version": "duplicate-tfidf-v1",
             "explanation": (
                 f"Found {len(candidates)} candidate(s) via TF-IDF cosine similarity."
-                if candidates else
+                if candidates
+                else
                 "No similar tickets found in the active pool."
             ),
         }

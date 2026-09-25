@@ -9,12 +9,25 @@ from app.rules import (
 
 
 EMERGENCY_KEYWORDS = [
-    "fire",
-    "flood",
-    "gas leak",
-    "electric shock",
-    "explosion",
-    "collapse",
+    # Fire / smoke
+    "fire", "fires", "burning", "smoke", "smoke smell",
+    # Flood / water
+    "flood", "flooding", "flooded",
+    # Gas / chemical
+    "gas leak", "gas leaking", "gas smell",
+    "chemical spill", "chemical leak", "toxic fumes",
+    # Electrical
+    "electric shock", "electrocuted", "electrocution",
+    "sparking wires", "exposed wires",
+    # Structural
+    "collapse", "collapsing", "collapsed", "structural damage",
+    # Explosion
+    "explosion", "explode", "exploded", "exploding",
+    # Medical / injury
+    "injured", "injury", "bleeding", "unconscious",
+    "trapped", "not breathing",
+    # Evacuation
+    "evacuate", "evacuation",
 ]
 
 
@@ -49,123 +62,49 @@ def is_emergency(title: str, description: str):
 
 def suggest_category(title: str, description: str):
     text = f"{title} {description}"
+    label, keyword = _find_matching_rule(text, CATEGORY_RULES)
 
-    category, keyword = _find_matching_rule(
-        text,
-        CATEGORY_RULES
-    )
+    if label is None:
+        return "OTHER", 0.5, "No keyword matched; defaulted to OTHER."
 
-    if category:
-        return (
-            category,
-            0.9,
-            f"Category suggested by rule based on keyword: {keyword}"
-        )
-
-    return (
-        "OTHER",
-        0.5,
-        "No specific category keyword was detected."
-    )
+    return label, 0.9, f"Matched keyword: '{keyword}'."
 
 
 def suggest_impact(title: str, description: str):
     text = f"{title} {description}"
+    label, keyword = _find_matching_rule(text, IMPACT_RULES)
 
-    impact, keyword = _find_matching_rule(
-        text,
-        IMPACT_RULES
-    )
+    if label is None:
+        return "Medium", 0.5, "No impact keyword matched; defaulted to Medium."
 
-    if impact:
-        return (
-            impact,
-            0.85,
-            f"Impact estimated from keyword: {keyword}"
-        )
-
-    return (
-        "Low",
-        0.5,
-        "No specific impact keyword was detected."
-    )
+    return label, 0.85, f"Matched impact keyword: '{keyword}'."
 
 
 def suggest_urgency(title: str, description: str):
-    text = f"{title} {description}".lower()
+    text = f"{title} {description}"
+    label, keyword = _find_matching_rule(text, URGENCY_RULES)
 
-    low_urgency_phrases = [
-        "not urgent",
-        "can wait",
-        "when possible",
-        "minor",
-    ]
+    if label is None:
+        return "Medium", 0.5, "No urgency keyword matched; defaulted to Medium."
 
-    for phrase in low_urgency_phrases:
-        if phrase in text:
-            return (
-                "Low",
-                0.85,
-                f"Urgency estimated from low-urgency phrase: {phrase}"
-            )
-
-    urgency, keyword = _find_matching_rule(
-        text,
-        URGENCY_RULES
-    )
-
-    if urgency:
-        return (
-            urgency,
-            0.85,
-            f"Urgency estimated from keyword: {keyword}"
-        )
-
-    return (
-        "Low",
-        0.5,
-        "No specific urgency keyword was detected."
-    )
+    return label, 0.85, f"Matched urgency keyword: '{keyword}'."
 
 
 def suggest_priority(title: str, description: str):
-    (
-        impact,
-        impact_confidence,
-        impact_explanation
-    ) = suggest_impact(
-        title,
-        description
-    )
-
-    (
-        urgency,
-        urgency_confidence,
-        urgency_explanation
-    ) = suggest_urgency(
-        title,
-        description
-    )
+    impact, impact_confidence, impact_explanation = suggest_impact(title, description)
+    urgency, urgency_confidence, urgency_explanation = suggest_urgency(title, description)
 
     priority = PRIORITY_MATRIX[impact][urgency]
-
-    priority_confidence = round(
-        min(
-            impact_confidence,
-            urgency_confidence
-        ),
-        2
-    )
-
-    priority_explanation = (
-        "Priority calculated using the impact × urgency matrix. "
-        f"Impact={impact}, Urgency={urgency}."
+    confidence = min(impact_confidence, urgency_confidence)
+    explanation = (
+        f"Impact={impact} ({impact_explanation}) x "
+        f"Urgency={urgency} ({urgency_explanation}) -> Priority={priority}."
     )
 
     return (
         priority,
-        priority_confidence,
-        priority_explanation,
+        confidence,
+        explanation,
         impact,
         impact_confidence,
         impact_explanation,
